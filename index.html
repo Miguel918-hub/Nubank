@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MPF Studio - Acesso Seguro</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000;
+      color: #fff;
+      overflow: hidden; /* impede scroll global indesejado */
+    }
+
+    /* Loading - sobrepõe tudo */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: #8200E9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.8s ease;
+    }
+
+    #loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .logo-loading {
+      font-size: 5rem;
+      font-weight: 700;
+      letter-spacing: -2.5px;
+      color: #ffffff;
+    }
+
+    /* Telas principais - agora com position: absolute + display controlado */
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      background: #000;
+      color: #fff;
+      padding: 0 20px;
+      overflow-y: auto; /* permite scroll se conteúdo for grande */
+      -webkit-overflow-scrolling: touch; /* smooth scroll no iOS */
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* Intro - centralizado verticalmente, sem scroll excessivo */
+    #intro {
+      justify-content: center;
+      text-align: center;
+      padding-top: 40px;
+      padding-bottom: 40px;
+    }
+
+    .logo-nu {
+      font-size: 3.8rem;
+      font-weight: 700;
+      letter-spacing: -2px;
+      color: #8200E9;
+      margin-bottom: 40px;
+    }
+
+    .title {
+      font-size: 1.35rem;
+      font-weight: 400;
+      line-height: 1.45;
+      max-width: 340px;
+      margin: 0 auto 28px;
+    }
+
+    .btn-nubank {
+      width: 100%;
+      max-width: 340px;
+      padding: 18px 0;
+      margin: 20px auto;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ffffff;
+      background: #8200E9;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(130, 0, 233, 0.25);
+      transition: transform 0.15s;
+    }
+
+    .btn-nubank:active {
+      transform: scale(0.97);
+    }
+
+    .subtitle {
+      font-size: 0.94rem;
+      color: #b0a0ff;
+      max-width: 340px;
+      margin: 16px auto 40px;
+      line-height: 1.4;
+    }
+
+    .toggle-container {
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.96rem;
+    }
+
+    .toggle-label {
+      flex: 1;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #333;
+      border-radius: 28px;
+      transition: .3s;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 24px;
+      width: 24px;
+      left: 2px;
+      bottom: 2px;
+      background: #ffffff;
+      border-radius: 50%;
+      transition: .3s;
+    }
+
+    input:checked + .toggle-slider {
+      background: #8200E9;
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Login e Panel - padding superior maior se quiser */
+    #login, #panel {
+      padding-top: 60px;
+      padding-bottom: 40px;
+    }
+
+    .input-group {
+      width: 100%;
+      max-width: 340px;
+      margin-bottom: 16px;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      border-radius: 16px;
+      background: #1a1a1a;
+      border: none;
+      color: white;
+      font-size: 1.05rem;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: #888;
+    }
+
+    .error {
+      color: #ff6b6b;
+      font-size: 0.95rem;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* Panel header e tabs */
+    .panel-header {
+      width: 100%;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .tabs {
+      display: flex;
+      width: 100%;
+      max-width: 340px;
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 6px;
+      margin: 0 auto 24px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      font-weight: 600;
+      border-radius: 12px;
+      color: #b0a0ff;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: #8200E9;
+      color: white;
+    }
+
+    .tab-content {
+      width: 100%;
+      max-width: 340px;
+      margin: 0 auto;
+    }
+
+    .switch-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 0;
+      border-bottom: 1px solid #333;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(130,0,233,0.95);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.4s;
+      z-index: 10000;
+      max-width: 90%;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-10px);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="logo-loading">nu</div>
+</div>
+
+<!-- Intro -->
+<div id="intro" class="screen active">
+  <div class="logo-nu">nu</div>
+  
+  <div class="title">
+    Queremos deixar seu roxinho ainda mais protegido.<br>Por isso, sempre vamos pedir uma senha para acessar o aplicativativo.
+  </div>
+  
+  <button class="btn-nubank" onclick="showScreen('login')">
+    Usar senha do celular
+  </button>
+  
+  <div class="subtitle">
+    Essa senha é a mesma forma de validação que você usa para desbloquear seu celular.
+  </div>
+
+  <div class="toggle-container">
+    <div class="toggle-label">
+      Pular esta explicação da próxima vez que eu abrir o aplicativo do Nubank.
+    </div>
+    <label class="toggle-switch">
+      <input type="checkbox">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+</div>
+
+<!-- Login -->
+<div id="login" class="screen">
+  <div class="logo-nu" style="font-size:2.8rem; margin-bottom:40px;">MPF Studio</div>
+  
+  <div class="input-group">
+    <input type="text" placeholder="Digite seu username" id="username">
+  </div>
+  <div class="input-group">
+    <input type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="Digite o ID da conta" id="accountId">
+  </div>
+  <div class="input-group">
+    <input type="text" placeholder="Digite sua key" id="key">
+  </div>
+  
+  <button class="btn-nubank" onclick="tryLogin()">Fazer Login</button>
+  <div class="error" id="errorMsg"></div>
+</div>
+
+<!-- Panel -->
+<div id="panel" class="screen">
+  <div class="panel-header">Panel @mpfstudio</div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="openTab('funcoes')">FUNÇÕES</div>
+    <div class="tab" onclick="openTab('desbanir')">DESBANIR</div>
+  </div>
+
+  <div id="funcoes" class="tab-content">
+    <div class="switch-container">
+      <span>Anti Ban</span>
+      <label class="toggle-switch">
+        <input type="checkbox" onchange="showToast(this.checked ? 'Anti Ban ativado!' : 'Anti Ban desativado!')">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+    <div class="switch-container">
+      <span>Anti Blacklist</span>
+      <label class="toggle-switch">
+        <input type="checkbox" onchange="showToast(this.checked ? 'Anti Blacklist ativado!' : 'Anti Blacklist desativado!')">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <div id="desbanir" class="tab-content" style="display:none;">
+    <div class="input-group">
+      <input type="tel" inputmode="numeric" pattern="[0-9]*" placeholder="ID da conta">
+    </div>
+    <button class="btn-nubank" onclick="requestUnban()">Solicitar Desbanimento</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const CORRECT_KEY = "777$&₩";
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  
+  // Reseta scroll para o topo ao trocar de tela
+  window.scrollTo(0, 0);
+}
+
+function hideLoading() {
+  document.getElementById('loading').classList.add('hidden');
+  setTimeout(() => {
+    document.getElementById('loading').style.display = 'none';
+  }, 800);
+}
+
+function tryLogin() {
+  const key = document.getElementById('key').value.trim();
+  const error = document.getElementById('errorMsg');
+  
+  if (key === CORRECT_KEY) {
+    error.textContent = '';
+    setTimeout(() => showScreen('panel'), 800);
+  } else {
+    error.textContent = 'Key inválida.';
+  }
+}
+
+function openTab(tabId) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+  
+  event.currentTarget.classList.add('active');
+  document.getElementById(tabId).style.display = 'block';
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function requestUnban() {
+  showToast("Solicitação enviada! (demo)");
+}
+
+window.addEventListener('load', () => {
+  setTimeout(hideLoading, 3000);
+});
+</script>
+
+</body>
+</html>
